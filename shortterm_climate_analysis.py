@@ -6,6 +6,7 @@ Created on Thu Oct 17 17:44:03 2019
 """
 import datetime as dt
 import env_methods as em
+import vis_methods as vm 
 import generate_doi 
 import numpy as np
 import os 
@@ -52,8 +53,8 @@ for stop_date in doi: #now iterate over the dates, generate an image for each da
         title_air = '6 days of air temp preceding ' + str(stop_date)
         title_gph = '6 days of gph preceding ' + str(stop_date)
         
-        em.plot_images(air_mean, air_stdev, lat, lon, filepath_air, title_air, 'deg C')
-        em.plot_images(gph_mean, gph_stdev, lat, lon, filepath_gph, title_gph, 'm')
+        vm.plot_images(air_mean, air_stdev, lat, lon, filepath_air, title_air, 'deg C')
+        vm.plot_images(gph_mean, gph_stdev, lat, lon, filepath_gph, title_gph, 'm')
         
         
     

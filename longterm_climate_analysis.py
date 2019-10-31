@@ -5,6 +5,7 @@ Created on Wed Oct 16 17:52:30 2019
 @author: bydd1
 """
 import env_methods as em
+import vis_methods as vm 
 import generate_doi
 import time as module_time
 import datetime as dt 
@@ -50,7 +51,7 @@ for m in moi:
     file_name = str(location_index) + '_' +str(m[1]) +'_' + str(m[0]) + '.png'
     filepath = os.path.join(image_folder, file_name)
     title = '6 months preceding ' +str(m[1]) + '/' +str(m[0])
-    em.plot_images(mean_image, stdev_image, 
+    vm.plot_images(mean_image, stdev_image, 
                    lat[lat_ind[0]:lat_ind[1]], 
                    lon[lon_ind[0]:lon_ind[1]], filepath, title, 'deg C')
     
@@ -69,7 +70,7 @@ for y in years:
     file_name = 'dry_' + str(location_index)  +'_' + str(date_obj.year) + '.png'
     filepath = os.path.join(image_folder, file_name)
     title = '6 months preceding ' +str(date_obj)
-    em.plot_images(mean_image, stdev_image, 
+    vm.plot_images(mean_image, stdev_image, 
                    lat[lat_ind[0]:lat_ind[1]], 
                    lon[lon_ind[0]:lon_ind[1]],
                    filepath, title, 'deg C')

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct 16 14:06:27 2019
-This program generates dates of interest for usage in [[]].py
+This program generates dates of interest for usage in shortterm_climate_analysis.py and longterm_climate_analysis.py
 
 Dates are saved as datetime.date objects, so they have no hourly component 
 Dates of Interest criteria
@@ -19,16 +19,21 @@ file_vicks = r'VicksburgHistoricStage.xlsx'
 file_ark = r'ArkansasCityHistoricStage.xlsx'
 file_hel = r'HelenaHistoricStage.xlsx'
 
-#location of all USGS peak streamflow data 
-file_peaks = r'USGS\peak_discharges.pickle'
+
+file_a = r'USGS\arkansas_city_peak_discharges.xlsx'
+file_h = r'USGS\helena_peak_discharges.xlsx'
+file_v = r'USGS\vicksburg_peak_discharges.xlsx'
+
+peak_files = [file_a, file_h, file_v]
+peak_vars = ['arkansas', 'helena', 'vicksburg']
 
 #USACE flood stage threshold 
 file_stage = r'FloodStage.xlsx'
 
 def get():
     #get peak streamflow dates 
-    dis_dates_a, dis_dates_h, dis_dates_v = rm.get_peak_streamflow_dates(directory, file_peaks, 'arkansas', 'helena', 'vicksburg')
-    dis_dates = [dis_dates_a, dis_dates_h, dis_dates_v]
+    dictionary = rm.get_streamflow_data(directory, peak_files, peak_vars)
+    dis_dates = [dictionary[peak_vars[0]], dictionary[peak_vars[1]], dictionary[peak_vars[2]]]
     
     #get all stage data 
     _, dates_a, stages_a = rm.get_river_data(directory, file_ark)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct 16 18:30:03 2019
-
+Methods used to handle NCEP-NCAR 4D datasets 
 @author: bydd1
 """
 from netCDF4 import Dataset
@@ -14,16 +14,17 @@ import pandas as pd
 from pydap.client import open_url 
 import sys
 
-#convert time from cardinal to datetime obj
+#convert time from cardinal to datetime obj, if values in array are time in days 
 def convert_time_days(arr, origin):
     arr = [origin + dt.timedelta(days = i) for i in arr]
     return arr
 
+#convert time from cardinal to datetime obj, if values in array are time in hours 
 def convert_time_hours(arr, origin):
     arr = [origin + dt.timedelta(hours = i) for i in arr]
     return arr
 
-#retrieve monthly gridded mean SST data 
+#retrieve monthly gridded mean SST data - this works for 1st reanalysis data 
 def get_sst_mon_mean(directory, file, var):
     f = Dataset(os.path.join(directory, file), 'r', format = 'NETCDF4')
     lat = f['lat'][:].data
@@ -43,6 +44,7 @@ def get_sst_mon_mean(directory, file, var):
     print(str(len(time)) + ' entries from ' +sd + ' to ' +ed)
     return time, lat, lon, sst
 
+#retrieve 3rd reanalysis data - very similar to above method 
 def get_3rd_reanalysis(directory, file, var_name):
     f = Dataset(os.path.join(directory, file), 'r', format = 'NETCDF4')
     lat = f['lat'][:].data
@@ -55,61 +57,23 @@ def get_3rd_reanalysis(directory, file, var_name):
     origin = dt.datetime(1800, 1, 1, 0, 0, 0) 
     time = convert_time_hours(time, origin)
     sd = dt.datetime.strftime(time[0], '%b %d, %Y')
-    ed= dt.datetime.strftime(time[-1], '%b %d, %Y')
+    ed = dt.datetime.strftime(time[-1], '%b %d, %Y')
     print(str(len(time)) + ' entries from ' +sd + ' to ' +ed)
 
     return time, lat, lon, var
 
-#make a movie of sst var over time 
-def generate_animation(time, lat, lon, var):
-    fig, ax = plt.subplots(figsize=(10, 8))
-    min_var = np.nanmin(var)
-    max_var = np.nanmax(var)
-    mesh = ax.pcolormesh(lon, lat, var[0, :, :], vmin = min_var, vmax = max_var, cmap = 'coolwarm')
-    cb = plt.colorbar(mesh)
-    cb.set_label('temp (deg C)')
-    ax.set_xlabel('deg longitude')
-    ax.set_ylabel('deg latitude')
-    ax.set_title('sst data: ' +str(time[0]))
-    
-    def animate(i):
-        ax.clear()
-        ax.pcolormesh(lon, lat, var[i, :, :], vmin = min_var, vmax = max_var, cmap = 'coolwarm')
-        ax.set_xlabel('deg longitude')
-        ax.set_ylabel('deg latitude')
-        ax.set_title(dt.datetime.strftime(time[i], '%b %d, %Y'))
-        
-    anim = FuncAnimation(fig, animate, interval=1, frames=len(time)-1)
-    return anim
 
+
+#find the closest value to some specified value in an array 
 def find_closest_val(val, arr):
     diff = [abs(x - val) for x in arr]
     index = diff.index(min(diff))
     return index 
 
-def plot_images(mean_image, stdev_image, lat, lon, filepath, title, units):
-   
-    
-    plt.figure(figsize = (14, 4))
-    plt.subplot(1,2,1)
-    mesh = plt.pcolormesh(lon, lat, mean_image, cmap = 'coolwarm')
-    cbar = plt.colorbar(mesh)
-    cbar.set_label(units)
-    plt.title('mean')
-    plt.xlabel('longitude')
-    plt.ylabel('latitude')
 
-    plt.suptitle(title)
-    plt.subplot(1,2,2)
-    mesh = plt.pcolormesh(lon, lat, stdev_image, cmap ='coolwarm')
-    cbar = plt.colorbar(mesh)
-    cbar.set_label(units)
-    plt.xlabel('longitude')
-    plt.ylabel('latitude')
-    plt.title('STDEV')
-    plt.savefig(filepath)
     
 #return all air temp and pressure data between two date ranges 
+    #this should be used for any dataset where the files have to be downloaded individually 
 def get_air_and_gph(start_date, stop_date):
     if start_date.year != stop_date.year:
         sys.exit('dates must be in same year for em.get_air_temp()')
@@ -158,4 +122,34 @@ def air_time_converter_to_greg(date):
     origin = dt.datetime(1800, 1, 1, 0, 0, 0 )
     hours = (date - origin).days * 24
     return hours
+
+
+def normalize_data(var, time):
+    import numpy as np
+    mean_monthly = []
+    stdev_monthly = []
+    
+    for i in np.arange(1,13): #iterate through months
+        monthly_subset = []
+        
+        for date in time: #iterate through all time values
+            if date.month == i: #collect data from month in question
+                monthly_subset.append(var[time.index(date), :, :])
+            
+        monthly_subset = np.asarray(monthly_subset)
+            
+        mean_monthly.append(np.mean(monthly_subset, axis = 0)) #average wrt time
+        stdev_monthly.append(np.std(monthly_subset, axis = 0)) #stdev wrt time
+    
+    for date in time: #for every time value, normalize
+        month = date.month
+    
+        frame = var[time.index(date), :, :]
+        
+        #normalization formula = (x - mean) / stdev
+        normalized_frame = np.divide(np.subtract(frame, mean_monthly[month - 1]), 
+                                     stdev_monthly[month -1])
+        var[time.index(date), :, :] = normalized_frame
+    
+    return var
         
