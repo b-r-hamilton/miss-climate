@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Nov 11 16:38:47 2019
-Completes PCA analysis on ENSO dataset 
+Completes PCA analysis on ncep/ncar dataset 
+pca code stolen from https://plot.ly/python/v3/ipython-notebooks/principal-component-analysis/
 @author: bydd1
 """
 
@@ -40,7 +41,7 @@ _, _, _, pres = em.get_3rd_reanalysis(ncep_folder, ncep_files[2], var_names[2])
 
 #bounding box for ENSO region 
 lat_bounds_enso = [-25, 25]
-lon_bounds_enso = [181, 181 + 110]
+lon_bounds_enso = [181 + 50 , 181 + 110]
 
 #bounding box for G.o.M region 
 lat_bounds_gom = [16, 31]
@@ -51,12 +52,12 @@ lat_bounds_full = [min(lat), max(lat)]
 lon_bounds_full = [min(lon), max(lon)]
 
 #ROIS 
-#regions = ['enso', 'gom', 'full']
-#lat_bounds = [lat_bounds_enso, lat_bounds_gom, lat_bounds_full]
-#lon_bounds = [lon_bounds_enso, lon_bounds_gom, lon_bounds_full]
-regions = ['gom', 'enso']
-lat_bounds = [lat_bounds_gom, lat_bounds_enso]
-lon_bounds = [lon_bounds_gom, lon_bounds_enso]
+regions = ['enso', 'gom', 'full']
+lat_bounds = [lat_bounds_enso, lat_bounds_gom, lat_bounds_full]
+lon_bounds = [lon_bounds_enso, lon_bounds_gom, lon_bounds_full]
+#regions = ['gom', 'enso']
+#lat_bounds = [lat_bounds_gom, lat_bounds_enso]
+#lon_bounds = [lon_bounds_gom, lon_bounds_enso]
  
 #get streamflow data - returns as dictionary, then extract important data (dates + discharges)
 locations = ['hermann', 'louisville', 'vicksburg']
@@ -116,11 +117,12 @@ for geospatial_subset in range(len(regions)):
             
 
             
-            fname = str(i) + '_' + regions[geospatial_subset] + '_' + 'tempmesh' + '.png'
+            fname = str(i) + '_' + regions[geospatial_subset] + '_' + str(dates.index(d)) + '_'+ 'tempmesh' + '.png'
             subfolder = os.path.join(folder, 'meshedimages')
             path = os.path.join(subfolder, fname)
             
-            title = 'temp' + locations[i] + '.png'
+            title = 'temp' + locations[i] + '_' + str(d)
+            
             vm.single_mesh(frame1, lat_sub, lon_sub, path, title, lat_bins, lon_bins)
                 
     
@@ -132,21 +134,57 @@ for geospatial_subset in range(len(regions)):
                     
                     pca_framework[index1, index2] = frame1[j, k]
                         
-        pca = decomposition.PCA(n_components = 2)
-        projected = pca.fit_transform(pca_framework)
+#        pca = decomposition.PCA(n_components = 2)
+#        projected = pca.fit_transform(pca_framework)
+#        
+#        fname = str(i) + '_' + regions[geospatial_subset] + '2comp_PCA' + '.png'
+#        path = os.path.join(folder, fname)
+#        title = regions[geospatial_subset] + '_' + locations[i]
+#        vm.biplot(projected, location_map, title, path, pca.explained_variance_ratio_)
+#    
+        mean_vec = np.mean(pca_framework, axis = 0)
+        cov_mat = np.cov(pca_framework.T)
+        eig_vals, eig_vecs =np.linalg.eig(cov_mat)
         
-        fname = str(i) + '_' + regions[geospatial_subset] + '2comp_PCA' + '.png'
-        path = os.path.join(folder, fname)
-        title = regions[geospatial_subset] + '_' + locations[i]
-        vm.biplot(projected, location_map, title, path, pca.explained_variance_ratio_)
-    
-        data_mean = np.mean(pca_framework)
-        data_center = pca_framework - data_mean
-        cov_matrix = np.cov(data_center)
-        eigenval, eigenvec = np.linalg.eig(cov_matrix)
-        significance = [np.abs(k)/np.sum(eigenval) for k in eigenval]
-    
-        fname = str(i) + '_' + regions[geospatial_subset] + '_' + 'scree' + '.png'
+#        for ev in eig_vecs:
+#            np.testing.assert_array_almost_equal(1.0, np.linalg.norm(ev))
+#            print('gucci')
+        
+        # Make a list of (eigenvalue, eigenvector) tuples
+        eig_pairs = [(np.abs(eig_vals[i]), eig_vecs[:,i]) for i in range(len(eig_vals))]
+        
+        # Sort the (eigenvalue, eigenvector) tuples from high to low
+        eig_pairs.sort()
+        eig_pairs.reverse()
+        
+        # Visually confirm that the list is correctly sorted by decreasing eigenvalues
+#        print('Eigenvalues in descending order:')
+#        for ep in eig_pairs:
+#            print(ep[0])
+        
+        tot = sum(eig_vals)
+        var_exp = [(i_sorted / tot)*100 for i_sorted in sorted(eig_vals, reverse=True)]
+        cum_var_exp = np.cumsum(var_exp)
+        
+        fname = locations[i] + '_' + regions[geospatial_subset] + '_' + 'scree' + '.png'
         subfolder = os.path.join(folder, 'screeplots')
         path = os.path.join(subfolder, fname)
-        vm.scree(significance, path)
+        title = locations[i] + '_' + regions[geospatial_subset]
+        vm.scree(cum_var_exp, path, title)
+        
+        matrix_w = np.hstack((eig_pairs[0][1].reshape(10,1), eig_pairs[1][1].reshape(10,1)))
+        Y = pca_framework.dot(matrix_w)
+        fname = locations[i] + '_' + regions[geospatial_subset] + '2comp_PCA' + '.png'
+        path = os.path.join(folder, fname)
+        title = regions[geospatial_subset] + '_' + locations[i]
+        vm.biplot(Y, location_map, title, path)
+        
+        bipx_bin = [(max(Y[:,0]) - min(Y[:,0])) * val / 5 + min(Y[:,0]) for val in np.arange(0, 5)]
+        bipy_bin = [(max(Y[:,1]) - min(Y[:,1])) * val / 5 + min(Y[:,1]) for val in np.arange(0, 5)]
+        
+        subfolder = os.path.join(folder, 'pcasim')
+        fname = locations[i] + '_' + regions[geospatial_subset] + '_' + 'pcasim' + '.png'
+        path = os.path.join(subfolder, fname)
+        title = 'pcasim' + locations[i]
+        vm.plot_pcasim_reg(tuple_list, bipx_bin, bipy_bin, Y, lat_sub, lon_sub, path, title)
+    

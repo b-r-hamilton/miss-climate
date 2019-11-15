@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import datetime as dt 
 import numpy as np
 import cartopy.crs as ccrs 
+import env_methods as em 
 
 #from pandas.plotting import register_matplotlib_converters
 #register_matplotlib_converters()
@@ -247,7 +248,8 @@ def single_mesh(frame, lat, lon, path, title, lat_bins, lon_bins):
     plt.close(fig)
     
     
-def biplot(projected, location_map, title, path, txt):
+def biplot(projected, location_map, title, path):
+    txt = ''
     fig = plt.figure()
     plt.suptitle('explained var rat = ' +str(txt))
     scat = plt.scatter(projected[:, 0], projected[:, 1], alpha = 0.5, c = location_map, cmap='viridis')
@@ -259,13 +261,38 @@ def biplot(projected, location_map, title, path, txt):
     plt.close(fig)
     
     
-def scree(significance, path):
+def scree(significance, path, title):
          #Plotting the Cumulative Summation of the Explained Variance
     fig = plt.figure()
     significance = significance[:10]
-    plt.plot(np.cumsum(significance))
+    plt.plot(significance)
     plt.xlabel('Number of Components')
     plt.ylabel('Variance (%)') #for each component
-    plt.title(' Explained Variance')
+    plt.title(' Explained Variance: ' + title)
     plt.savefig(path)
     plt.close(fig)
+    
+    
+def plot_pcasim_reg(tups, x_bin, y_bin, Y, lat, lon, path, title):
+    c = np.empty((len(lat), len(lon))) #lat/lon frame 
+    tuple_list = em.generate_tuples(x_bin, y_bin) #list of binned tuples 
+
+    lat = lat.tolist()
+    lon = lon.tolist()
+    for ind in range(Y.shape[0]): #iterate through every lat/lon pair, in Y-order 
+        x_val = x_bin[em.find_closest_val(Y[ind, 0], x_bin)] #find the index of the closest val in x_bin 
+        y_val = y_bin[em.find_closest_val(Y[ind, 1], y_bin)]
+        c_x = lat.index(tups[ind][0])
+        c_y = lon.index(tups[ind][1])
+
+        c[c_x, c_y] = tuple_list.index((x_val, y_val))
+    
+    fig = plt.figure()
+    ax3 = plt.subplot(projection = ccrs.PlateCarree())
+    plt.title(title)
+    ax3.coastlines()
+    mesh = plt.pcolormesh(lon, lat, c)
+    plt.colorbar(mesh)
+    plt.savefig(path)
+    plt.close(fig)
+        
