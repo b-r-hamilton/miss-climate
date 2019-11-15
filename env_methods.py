@@ -169,4 +169,14 @@ def subset_data(air, pres, prate, lat, lon, time, lat_bounds, lon_bounds):
     
     return air, pres, prate, lat, lon 
     
+
+def generate_tuples(lats, lons):
+    tuple_list = []
+    for lat in lats:
+        for lon in lons: 
+            tup = (lat, lon)
+            if tup not in tuple_list: tuple_list.append(tup)
+    return tuple_list 
+
+            
     

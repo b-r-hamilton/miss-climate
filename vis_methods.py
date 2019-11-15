@@ -231,5 +231,41 @@ def generate_3_var_img(frame1, frame2, frame3, date, path, lat, lon):
     if type(path) == str: plt.savefig(path)
     
     plt.close(fig)
-#def generate_image_set():
+
+def single_mesh(frame, lat, lon, path, title, lat_bins, lon_bins):
+    fig = plt.figure()
+    ax3 = plt.subplot(projection = ccrs.PlateCarree())
+    ax3.coastlines()
+    plt.title(title)
+    plt.xlabel('longitude')
+    plt.ylabel('latitude')
+    mesh3 = plt.pcolormesh(lon, lat, frame, cmap = 'coolwarm',vmin = -1, vmax = 1)
+#    ax3.hlines(lat_bins, xmin = min(lon), xmax = max(lon))
+#    ax3.vlines(lon_bins, ymin = min(lat), ymax = max(lat))
+    plt.colorbar(mesh3)
+    if type(path) == str: plt.savefig(path)
+    plt.close(fig)
     
+    
+def biplot(projected, location_map, title, path, txt):
+    fig = plt.figure()
+    plt.suptitle('explained var rat = ' +str(txt))
+    scat = plt.scatter(projected[:, 0], projected[:, 1], alpha = 0.5, c = location_map, cmap='viridis')
+    plt.colorbar(scat)
+    plt.xlabel('component 1')
+    plt.ylabel('component 2')
+    plt.title(title)
+    plt.savefig(path)
+    plt.close(fig)
+    
+    
+def scree(significance, path):
+         #Plotting the Cumulative Summation of the Explained Variance
+    fig = plt.figure()
+    significance = significance[:10]
+    plt.plot(np.cumsum(significance))
+    plt.xlabel('Number of Components')
+    plt.ylabel('Variance (%)') #for each component
+    plt.title(' Explained Variance')
+    plt.savefig(path)
+    plt.close(fig)
