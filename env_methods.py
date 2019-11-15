@@ -7,11 +7,7 @@ Methods used to handle NCEP-NCAR 4D datasets
 from netCDF4 import Dataset
 import os 
 import datetime as dt 
-import matplotlib.pyplot as plt 
 import numpy as np 
-from matplotlib.animation import FuncAnimation
-import pandas as pd
-from pydap.client import open_url 
 import sys
 
 #convert time from cardinal to datetime obj, if values in array are time in days 
@@ -125,7 +121,6 @@ def air_time_converter_to_greg(date):
 
 
 def normalize_data(var, time):
-    import numpy as np
     mean_monthly = []
     stdev_monthly = []
     
@@ -148,8 +143,30 @@ def normalize_data(var, time):
         
         #normalization formula = (x - mean) / stdev
         normalized_frame = np.divide(np.subtract(frame, mean_monthly[month - 1]), 
-                                     stdev_monthly[month -1])
+                                     stdev_monthly[month - 1])
         var[time.index(date), :, :] = normalized_frame
     
     return var
         
+
+#geospatially subset and normalize data 
+def subset_data(air, pres, prate, lat, lon, time, lat_bounds, lon_bounds):
+    #cut data to bounding box 
+    lat_ind = [find_closest_val(lat_bounds[0], lat), find_closest_val(lat_bounds[1], lat)]
+    lon_ind = [find_closest_val(lon_bounds[0], lon), find_closest_val(lon_bounds[1], lon)]
+#    print('lat_ind = ' +str(lat_ind))
+#    print('lon_ind = ' +str(lon_ind))
+    lat = lat[lat_ind[0]:lat_ind[1]]
+    lon = lon[lon_ind[0]:lon_ind[1]]
+    air = air[:, lat_ind[0]:lat_ind[1], lon_ind[0]:lon_ind[1]]
+    pres = pres[:, lat_ind[0]:lat_ind[1], lon_ind[0]:lon_ind[1]]
+    prate = prate[:, lat_ind[0]:lat_ind[1], lon_ind[0]:lon_ind[1]]
+    
+    #normalize data 
+    air = normalize_data(air, time)
+    pres = normalize_data(pres, time)
+    prate = normalize_data(prate, time)
+    
+    return air, pres, prate, lat, lon 
+    
+    

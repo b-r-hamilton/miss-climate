@@ -7,6 +7,8 @@ All functions that generate data visualizations
 import matplotlib.pyplot as plt
 import datetime as dt 
 import numpy as np
+import cartopy.crs as ccrs 
+
 #from pandas.plotting import register_matplotlib_converters
 #register_matplotlib_converters()
 
@@ -194,26 +196,37 @@ def plot_first_derivative(dates, stages, fnum):
 def generate_3_var_img(frame1, frame2, frame3, date, path, lat, lon):
    
     fig = plt.figure(figsize = (12, 18))
-    plt.suptitle(str(date))
+    plt.suptitle(date)
     print(str(date))
-    plt.subplot(3,1,1)
+    
+    ax1 = plt.subplot(3,1,1, projection = ccrs.PlateCarree())
+    ax1.coastlines()
     plt.title('normed temperature')
     plt.xlabel('longitude')
     plt.ylabel('latitude')
-    mesh1 = plt.pcolormesh(lon, lat, frame1, cmap = 'coolwarm')
+    mesh1 = plt.pcolormesh(lon, lat, frame1, cmap = 'coolwarm', vmin = -1, vmax = 1)
     plt.colorbar(mesh1)
-    plt.subplot(3,1,2)
+    
+    ax2 = plt.subplot(3,1,2, projection = ccrs.PlateCarree())
+    ax2.coastlines()
     plt.title('normed pressure')
     plt.xlabel('longitude')
     plt.ylabel('latitude')
-    mesh2 = plt.pcolormesh(lon, lat, frame2, cmap = 'coolwarm')
+    mesh2 = plt.pcolormesh(lon, lat, frame2, cmap = 'coolwarm',vmin = -1, vmax = 1)
     plt.colorbar(mesh2)
-    plt.subplot(3,1,3)
+    
+    ax3 = plt.subplot(3,1,3, projection = ccrs.PlateCarree())
+    ax3.coastlines()
     plt.title('normed precip')
     plt.xlabel('longitude')
     plt.ylabel('latitude')
-    mesh3 = plt.pcolormesh(lon, lat, frame3, cmap = 'coolwarm')
-    plt.colorbar(mesh1)
+    mesh3 = plt.pcolormesh(lon, lat, frame3, cmap = 'coolwarm',vmin = -1, vmax = 1)
+    plt.colorbar(mesh3)
+    
+#    for x in [frame1, frame2, frame3]:
+#        if np.nanmax(x) > 1: print('error, max = ' + str(np.nanmax(x)))
+#        if np.nanmin(x) > 1: print('error, min = ' + str(np.nanmin(x)))
+        
     
     if type(path) == str: plt.savefig(path)
     

@@ -127,31 +127,37 @@ def high_first_derivative(dates, stages, num_stdev):
 
 #get USGS data
 def get_streamflow_data(directory, file_names, var_names):
-#    directory = r'C:\Users\bydd1\Documents\Research\Data\river data\USGS'
-#
-#    file_a = r'hermann_peak_discharges.xlsx'
-#    file_h = r'louisville_peak_discharges.xlsx'
-#    file_v = r'vicksburg_peak_discharges.xlsx'
-#    
-#    files = [file_a, file_h, file_v]
-#    names = ['hermann', 'louisville', 'vicksburg']
-    data = []
-    
+    dictionary = {}
     for f in file_names:
+        
+        ind = file_names.index(f)
         x = pd.read_excel(os.path.join(directory, f))
-        dates = x[73:]
-        dates = dates[x.columns[2]]
-    #    dates = np.asarray(dates)
+        values = x[73:]
+        dates = values[x.columns[2]].tolist()
+        discharges = values[x.columns[4]].tolist()
         new_dates = []
+        new_discharges = []
+        
+        counter = 0 
+        bad_val_counter = 0
         for d in dates:
-            if type(d) != str:
-                new_dates.append(d)
-        data.append(new_dates)
             
-    dictionary = {var_names[0]:data[0],
-                  var_names[1]:data[0],
-                  var_names[2]:data[2]}
-    
+            if type(d) != str:
+                
+                new_dates.append(d)
+                index_date = new_dates.index(d)
+                new_discharges.append(discharges[index_date])
+                
+            else:
+                bad_val_counter += 1
+            
+            counter += 1
+        
+        print(str(bad_val_counter) + ' values tossed')
+        
+        dictionary[var_names[ind] + '_dates'] = new_dates
+        dictionary[var_names[ind] + '_discharges'] = new_discharges
+        
     return dictionary 
 
     
