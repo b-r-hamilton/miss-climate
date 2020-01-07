@@ -17,7 +17,7 @@ import numpy as np
 from sklearn import decomposition
 import os 
 
-folder = r'C:\Users\bydd1\Documents\Research\PCA Images'
+folder = r'C:\Users\bydd1\Documents\Research\PCA Images_correct'
 
 num_months = 6 #number of months prior to peak streamflow date to get data for 
 top_days = 10 #produce images for 10 dates with highest discharge 
@@ -52,12 +52,12 @@ lat_bounds_full = [min(lat), max(lat)]
 lon_bounds_full = [min(lon), max(lon)]
 
 #ROIS 
-regions = ['enso', 'gom', 'full']
-lat_bounds = [lat_bounds_enso, lat_bounds_gom, lat_bounds_full]
-lon_bounds = [lon_bounds_enso, lon_bounds_gom, lon_bounds_full]
-#regions = ['gom', 'enso']
-#lat_bounds = [lat_bounds_gom, lat_bounds_enso]
-#lon_bounds = [lon_bounds_gom, lon_bounds_enso]
+#regions = ['enso', 'gom', 'full']
+#lat_bounds = [lat_bounds_enso, lat_bounds_gom, lat_bounds_full]
+#lon_bounds = [lon_bounds_enso, lon_bounds_gom, lon_bounds_full]
+regions = ['gom', 'enso']
+lat_bounds = [lat_bounds_gom, lat_bounds_enso]
+lon_bounds = [lon_bounds_gom, lon_bounds_enso]
  
 #get streamflow data - returns as dictionary, then extract important data (dates + discharges)
 locations = ['hermann', 'louisville', 'vicksburg']
@@ -96,7 +96,7 @@ for geospatial_subset in range(len(regions)):
     for i in range(len(locations)): #iterate through each locations 
         dates = dis_dates[i] #get dates for that location
         discharges = dis[i] #get discharges for that location 
-        z = sorted(zip(discharges, dates)) #zip, sort by highest discharges 
+        z = sorted(zip(discharges, dates), reverse = True) #zip, sort by highest discharges 
         z = z[:top_days] #get top x discharge dates 
         discharges, dates = zip(*(z)) #unzip to original variables 
         

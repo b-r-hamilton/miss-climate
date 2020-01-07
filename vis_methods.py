@@ -200,7 +200,7 @@ def generate_3_var_img(frame1, frame2, frame3, date, path, lat, lon):
     plt.suptitle(date)
     print(str(date))
     
-    ax1 = plt.subplot(3,1,1, projection = ccrs.PlateCarree())
+    ax1 = plt.subplot(3,1,1, projection = ccrs.PlateCarree(central_longitude = 180))
     ax1.coastlines()
     plt.title('normed temperature')
     plt.xlabel('longitude')
@@ -208,7 +208,7 @@ def generate_3_var_img(frame1, frame2, frame3, date, path, lat, lon):
     mesh1 = plt.pcolormesh(lon, lat, frame1, cmap = 'coolwarm', vmin = -1, vmax = 1)
     plt.colorbar(mesh1)
     
-    ax2 = plt.subplot(3,1,2, projection = ccrs.PlateCarree())
+    ax2 = plt.subplot(3,1,2, projection = ccrs.PlateCarree(central_longitude = 180))
     ax2.coastlines()
     plt.title('normed pressure')
     plt.xlabel('longitude')
@@ -216,7 +216,7 @@ def generate_3_var_img(frame1, frame2, frame3, date, path, lat, lon):
     mesh2 = plt.pcolormesh(lon, lat, frame2, cmap = 'coolwarm',vmin = -1, vmax = 1)
     plt.colorbar(mesh2)
     
-    ax3 = plt.subplot(3,1,3, projection = ccrs.PlateCarree())
+    ax3 = plt.subplot(3,1,3, projection = ccrs.PlateCarree(central_longitude = 180))
     ax3.coastlines()
     plt.title('normed precip')
     plt.xlabel('longitude')
@@ -233,17 +233,20 @@ def generate_3_var_img(frame1, frame2, frame3, date, path, lat, lon):
     
     plt.close(fig)
 
-def single_mesh(frame, lat, lon, path, title, lat_bins, lon_bins):
-    fig = plt.figure()
-    ax3 = plt.subplot(projection = ccrs.PlateCarree())
+def single_mesh(frame, lat, lon, path, title):
+    fig = plt.figure(figsize = (15, 8))
+    ax3 = plt.subplot(projection = ccrs.PlateCarree(central_longitude = 180))
     ax3.coastlines()
     plt.title(title)
+    plt.xticks(lon[::10])
+    plt.yticks(lat[::10])
     plt.xlabel('longitude')
     plt.ylabel('latitude')
     mesh3 = plt.pcolormesh(lon, lat, frame, cmap = 'coolwarm',vmin = -1, vmax = 1)
 #    ax3.hlines(lat_bins, xmin = min(lon), xmax = max(lon))
 #    ax3.vlines(lon_bins, ymin = min(lat), ymax = max(lat))
-    plt.colorbar(mesh3)
+    cb = plt.colorbar(mesh3)
+    cb.set_label(r'$\sigma$ from mean monthly vals')
     if type(path) == str: plt.savefig(path)
     plt.close(fig)
     
@@ -295,4 +298,4 @@ def plot_pcasim_reg(tups, x_bin, y_bin, Y, lat, lon, path, title):
     plt.colorbar(mesh)
     plt.savefig(path)
     plt.close(fig)
-        
+    

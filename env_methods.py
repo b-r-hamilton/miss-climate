@@ -50,12 +50,21 @@ def get_3rd_reanalysis(directory, file, var_name):
     var = f[var_name][:].data
     var[var < -10000] = np.nan
     
+    land_path = r'C:\Users\bydd1\Documents\Research\Data\land.nc'
+    land_dataset = Dataset(land_path, 'r', format = 'NETCDF4')
+    land = np.squeeze(land_dataset['land'][:].data)
+    land = 1 - land
+    for i in range(np.size(var, 0)):
+        var[i, :, :] = np.multiply(var[i, :, :], land)
+    
+    var[var < -10000] = np.nan
+    var[var == 0] = np.nan
     origin = dt.datetime(1800, 1, 1, 0, 0, 0) 
     time = convert_time_hours(time, origin)
     sd = dt.datetime.strftime(time[0], '%b %d, %Y')
     ed = dt.datetime.strftime(time[-1], '%b %d, %Y')
     print(str(len(time)) + ' entries from ' +sd + ' to ' +ed)
-
+    
     return time, lat, lon, var
 
 
@@ -170,12 +179,32 @@ def subset_data(air, pres, prate, lat, lon, time, lat_bounds, lon_bounds):
     return air, pres, prate, lat, lon 
     
 
+#geospatially subset and normalize data 
+def subset_data_one(air, lat, lon, time, lat_bounds, lon_bounds):
+    #cut data to bounding box 
+    lat_ind = [find_closest_val(lat_bounds[0], lat), find_closest_val(lat_bounds[1], lat)]
+    lon_ind = [find_closest_val(lon_bounds[0], lon), find_closest_val(lon_bounds[1], lon)]
+#    print('lat_ind = ' +str(lat_ind))
+#    print('lon_ind = ' +str(lon_ind))
+    lat = lat[lat_ind[0]:lat_ind[1]]
+    lon = lon[lon_ind[0]:lon_ind[1]]
+    air = air[:, lat_ind[0]:lat_ind[1], lon_ind[0]:lon_ind[1]]
+
+    
+    #normalize data 
+    air = normalize_data(air, time)
+
+    
+    return air, lat, lon 
+
 def generate_tuples(lats, lons):
+    
     tuple_list = []
     for lat in lats:
         for lon in lons: 
             tup = (lat, lon)
             if tup not in tuple_list: tuple_list.append(tup)
+            
     return tuple_list 
 
             
