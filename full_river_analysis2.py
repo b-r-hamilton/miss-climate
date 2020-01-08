@@ -77,7 +77,7 @@ for geospatial_subset in range(len(regions)):
     lb1 = lat_bounds[geospatial_subset]
     lb2 = lon_bounds[geospatial_subset]
     lb2_con = [x + 180 for x in lb2]
-    air_sub, lat_sub, lon_sub = em.subset_data_one(air, lat, lon, time, lb1, lb2_con)
+    air_sub, lat_sub, lon_sub = em.subset_data_one(air, lat, lon, time, lb1, lb2_con, normalize = True)
         
     for i in range(len(locations)): #iterate through each locations 
         dates = dis_dates[i]

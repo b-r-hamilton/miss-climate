@@ -180,7 +180,7 @@ def subset_data(air, pres, prate, lat, lon, time, lat_bounds, lon_bounds):
     
 
 #geospatially subset and normalize data 
-def subset_data_one(air, lat, lon, time, lat_bounds, lon_bounds):
+def subset_data_one(air, lat, lon, time, lat_bounds, lon_bounds, normalize):
     #cut data to bounding box 
     lat_ind = [find_closest_val(lat_bounds[0], lat), find_closest_val(lat_bounds[1], lat)]
     lon_ind = [find_closest_val(lon_bounds[0], lon), find_closest_val(lon_bounds[1], lon)]
@@ -192,8 +192,7 @@ def subset_data_one(air, lat, lon, time, lat_bounds, lon_bounds):
 
     
     #normalize data 
-    air = normalize_data(air, time)
-
+    if normalize: air = normalize_data(air, time)
     
     return air, lat, lon 
 

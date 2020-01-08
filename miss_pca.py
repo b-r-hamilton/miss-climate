@@ -14,7 +14,6 @@ import vis_methods as vm
 #python libraries 
 import datetime as dt
 import numpy as np
-from sklearn import decomposition
 import os 
 
 folder = r'C:\Users\bydd1\Documents\Research\PCA Images_correct'
