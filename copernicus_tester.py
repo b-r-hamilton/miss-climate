@@ -3,12 +3,10 @@
 Created on Tue Jan  7 15:11:45 2020
 Pull Copernicus data from 
 https://cds.climate.copernicus.eu/cdsapp#!/dataset/10.24381/cds.a4fdd6b9?tab=overview
-
 Calculate 
     1. average of mean annual flow (per pixel) 
     2. average of peak annual flow (maximum per year, average maximum)
     3. average of minimum annual flow (min per year, average) 
-
 @author: bydd1
 """
 from netCDF4 import Dataset
@@ -39,4 +37,3 @@ dis_new[dis_new == 1e+20 ] = np.nan
 
 fig = vm.single_mesh_copernicus(dis_new[0, :, :], lat_new, lon_new, 0, 
                                 'December 1, 1970 discharges above 10 m^3/s')
-
