@@ -29,6 +29,7 @@ import time as python_time
 import pickle 
 start_time = python_time.time()
 
+#%%
 # #bounding box = [[lat_high, lat_low], [lon_left, lon_right]]
 
 #mississippi basin (maybe?): 
@@ -164,10 +165,8 @@ dictionary = {'mean_annual' : mean_annual,
               'lat' : lat,
               'lon' : lon}
 
-vm.single_mesh_copernicus(np.nanmean(mean_annual), lat, lon, 0, 'Average River Discharge')
-vm.single_mesh_copernicus(np.nanmax(peak_annual), lat, lon, 0, 'Peak River Discharge')
-vm.single_mesh_copernicus(np.nanmin(min_annual), lat, lon, 0, 'Min River Discharge')
 
+#%%
 pickle.dump(dictionary, open(save_path, "wb" ) )
 #open with pickle.load( open( save_path, "rb" ) )
 

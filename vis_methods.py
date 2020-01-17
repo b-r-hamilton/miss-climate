@@ -300,12 +300,12 @@ def plot_pcasim_reg(tups, x_bin, y_bin, Y, lat, lon, path, title):
     plt.close(fig)
     
 def single_mesh_copernicus(frame, lat, lon, path, title):
-    fig = plt.figure(figsize = (15, 8))
+    fig = plt.figure(figsize = (30, 16))
     ax3 = plt.subplot(projection = ccrs.PlateCarree(central_longitude = 0))
     ax3.coastlines()
     plt.title(title)
-    plt.xticks(lon[::30])
-    plt.yticks(lat[::30])
+    plt.xticks(lon[::100])
+    plt.yticks(lat[::100])
     plt.xlabel('longitude')
     plt.ylabel('latitude')
     mesh3 = plt.pcolormesh(lon, lat, frame, cmap = 'coolwarm')
