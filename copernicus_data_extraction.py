@@ -22,12 +22,20 @@ Calculate
 from netCDF4 import Dataset
 import os 
 import numpy as np 
-# import env_methods as em 
-# import vis_methods as vm 
+import env_methods as em 
+import vis_methods as vm 
 import datetime as dt 
 import time as python_time
 import pickle 
 start_time = python_time.time()
+
+# #bounding box = [[lat_high, lat_low], [lon_left, lon_right]]
+
+#mississippi basin (maybe?): 
+bbox = [[48, 25], [76 - 180,  105 - 180]]
+
+#full world:
+# bbox = [[89.95, - 59.95], [-179.95, 179.95]]
 
 def convert_datetime(val):
     origin = dt.datetime(1979, 1, 1)
@@ -44,7 +52,6 @@ def parse_filenames(f):
         datetimes.append(dt.datetime(year, month, day))
     return datetimes
         
-
 #return all indices for a specific year for the list of filenames 
 def get_year_indices(datetimes, spec_year):
     indices = []
@@ -66,7 +73,7 @@ def get_month_indices(datetimes, given_indexes, spec_month):
 directory = r'D:\CDS River Discharge\Data'
 files = os.listdir(directory)
 
-save_path = r'D:\CDS River Discharge\Pickles\river_analytics.pickle'
+save_path = r'D:\CDS River Discharge\Pickles\mississippi_basin_river_discharge.pickle'
 datetimes = parse_filenames(files)
 
 available_years = np.arange(datetimes[0].year, datetimes[-1].year + 1).tolist()
@@ -77,6 +84,16 @@ dataset = Dataset(path, 'r', format = 'NETCDF4')
 lat = dataset['lat'][:].data #get latitude data (should be same for all files)
 lon = dataset['lon'][:].data #get longitude data 
 
+#find indices for bounding box 
+for i in bbox:
+    if bbox.index(i) == 0: coord = lat
+    if bbox.index(i) == 1: coord = lon 
+    for j in i:
+        bbox[bbox.index(i)][i.index(j)] = em.find_closest_val(j, coord)
+
+lat = lat[bbox[0][0]:bbox[0][1]]
+lon = lon[bbox[1][0]:bbox[1][1]]
+#initialize overall mean/peak/min arrays 
 mean_annual = np.empty((len(available_years), len(lat), len(lon)))
 peak_annual = np.empty((len(available_years), len(lat), len(lon)))
 min_annual = np.empty((len(available_years), len(lat), len(lon)))
@@ -113,7 +130,7 @@ for year in available_years: #iterate through one year at a time
             #get time 
             time = dataset['time'][:].data
             time = convert_datetime(time[0]) #convert time to datetime object 
-            dis = dataset['dis24'][:,:,:].data
+            dis = dataset['dis24'][:,bbox[0][0]:bbox[0][1],bbox[1][0]:bbox[1][1]].data
             dis[dis == 1e+20] = np.nan
             monthly_data[m_indices.index(mm), :, :] = dis[0, :, :]
         
@@ -132,7 +149,7 @@ for year in available_years: #iterate through one year at a time
     mean = np.nanmean(yearly_means, axis = 0)
     peak = np.nanmax(yearly_peak, axis = 0)
     mini = np.nanmin(yearly_min, axis = 0)
-        
+    
     mean_annual[available_years.index(year), :, :] = mean
     peak_annual[available_years.index(year), :, :] = peak
     min_annual[available_years.index(year), :, :] = mini
@@ -147,6 +164,9 @@ dictionary = {'mean_annual' : mean_annual,
               'lat' : lat,
               'lon' : lon}
 
+vm.single_mesh_copernicus(np.nanmean(mean_annual), lat, lon, 0, 'Average River Discharge')
+vm.single_mesh_copernicus(np.nanmax(peak_annual), lat, lon, 0, 'Peak River Discharge')
+vm.single_mesh_copernicus(np.nanmin(min_annual), lat, lon, 0, 'Min River Discharge')
 
 pickle.dump(dictionary, open(save_path, "wb" ) )
 #open with pickle.load( open( save_path, "rb" ) )
