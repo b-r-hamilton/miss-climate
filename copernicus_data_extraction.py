@@ -22,8 +22,8 @@ Calculate
 from netCDF4 import Dataset
 import os 
 import numpy as np 
-import env_methods as em 
-import vis_methods as vm 
+# import env_methods as em 
+# import vis_methods as vm 
 import datetime as dt 
 import time as python_time
 import pickle 
@@ -34,56 +34,116 @@ def convert_datetime(val):
     date = origin + dt.timedelta(hours = val)
     return date
 
-directory = r'C:\Users\bydd1\Documents\Research\Data\GFAS Data (Copernicus)\dec1_tarr'
+#read in a list of filenames from the CDS dataset and reorder in order of date
+def parse_filenames(f):
+    datetimes = []
+    for i in f:
+        year = int(i[17:21])
+        month = int(i[21:23])
+        day =  int(i[23:25])
+        datetimes.append(dt.datetime(year, month, day))
+    return datetimes
+        
+
+#return all indices for a specific year for the list of filenames 
+def get_year_indices(datetimes, spec_year):
+    indices = []
+    for i in datetimes:
+        if i.year == spec_year:
+            indices.append(datetimes.index(i))
+    return indices 
+
+#return all indices for a specific month in a list of datetimes
+    #here used assuming we're feeding in a list of one year's indices 
+def get_month_indices(datetimes, given_indexes, spec_month):
+    indices = []
+    for i in given_indexes:
+        if datetimes[i].month == spec_month:
+            indices.append(i)
+            
+    return indices 
+
+directory = r'D:\CDS River Discharge\Data'
 files = os.listdir(directory)
 
-save_path = r'C:\Users\bydd1\Documents\Research\Data\Pickles\all_cds_river.pickle'
+save_path = r'D:\CDS River Discharge\Pickles\river_analytics.pickle'
+datetimes = parse_filenames(files)
 
-#initialize data variables 
-dis_ov = np.empty(0)
-time_ov = np.empty(0)
-lat = np.empty(0)
-lon = np.empty(0)
+available_years = np.arange(datetimes[0].year, datetimes[-1].year + 1).tolist()
 
-first_flag = False #this flag shows whether or not we've initialized the data values 
+#get initial data - all lat/lon arrays 
+path = os.path.join(directory, files[0])
+dataset = Dataset(path, 'r', format = 'NETCDF4')
+lat = dataset['lat'][:].data #get latitude data (should be same for all files)
+lon = dataset['lon'][:].data #get longitude data 
 
-
-#iterate through all files in directory 
-for name in files: 
-    
-    path = os.path.join(directory, name)
-    dataset = Dataset(path, 'r', format = 'NETCDF4')
-    
-    time = dataset['time'][:].data
-    time = convert_datetime(time[0]) #convert time to datetime object 
-    dis = dataset['dis24'][:,:,:].data
-    dis[dis == 1e+20] = np.nan
-    
-    #initialize data on first run through 
-    if not first_flag:
-        first_flag = True #set flag to True (we've initialized)
-    
-        lat = dataset['lat'][:].data #get latitude data (should be same for all files )
-        lon = dataset['lon'][:].data #get longitude data 
-        
-        time_ov = np.array(time) #append time value to array
-        dis_ov = dis
-    
-    #if not on first run, don't need to get lat/lon - just get new dis data and date
-    else:
-        time_ov = np.append(time_ov, time)
-        dis_ov = np.append(dis_ov, dis, axis = 0)
-    
-    #print timing update (takes 0.5 seconds per file on my laptop)
-    file_number = files.index(name)
-    num_files = len(files)
-    print(str(file_number) +' of ' + str(num_files) + ' extracted')
-        
+mean_annual = np.empty((len(available_years), len(lat), len(lon)))
+peak_annual = np.empty((len(available_years), len(lat), len(lon)))
+min_annual = np.empty((len(available_years), len(lat), len(lon)))
 
 #%%
-#save all data in pickle 
-dictionary = {'dis' : dis,
-              'time' : time_ov,
+
+#batch processing method because of memory issues 
+for year in available_years: #iterate through one year at a time 
+    
+    #log statements 
+    time_elapsed = python_time.time() - start_time
+    print('beginning analysis of year ' +str(year) +' : ' + str(time_elapsed) + ' seconds elapsed')
+    
+    y_indices = get_year_indices(datetimes, year) #all indices of files with data in year 
+    #what months are available within this file subset 
+    available_months = np.arange(datetimes[y_indices[0]].month, datetimes[y_indices[-1]].month + 1).tolist()
+    
+    #initialize arrays to store means/peaks/mins for JUST THIS YEAR 
+    yearly_means = np.empty((len(available_months), len(lat), len(lon)))
+    yearly_peak = np.empty((len(available_months), len(lat), len(lon)))
+    yearly_min = np.empty((len(available_months), len(lat), len(lon)))
+    
+    for m in available_months:  #iterate through each month, calculating statistics 
+        
+        m_indices = get_month_indices(datetimes, y_indices, m) #find indices for the months within
+        monthly_data = np.empty((len(m_indices), len(lat), len(lon))) #store daily data for specified
+        
+        #iterate through each day in the specific month 
+        for mm in m_indices: 
+            name = files[mm] #get file name 
+            path = os.path.join(directory, name) #get filepath 
+            dataset = Dataset(path, 'r', format = 'NETCDF4') #open dataset 
+            
+            #get time 
+            time = dataset['time'][:].data
+            time = convert_datetime(time[0]) #convert time to datetime object 
+            dis = dataset['dis24'][:,:,:].data
+            dis[dis == 1e+20] = np.nan
+            monthly_data[m_indices.index(mm), :, :] = dis[0, :, :]
+        
+        #after collecting all data for one month, calculate statistics and store in yearly 
+        mean = np.nanmean(monthly_data, axis = 0)
+        peak = np.nanmax(monthly_data, axis = 0)
+        mini = np.nanmin(monthly_data, axis = 0)
+    
+        yearly_means[available_months.index(m), :, :] = mean
+        yearly_peak[available_months.index(m), :, :] = peak
+        yearly_min[available_months.index(m), :, :] = mini
+        
+        print('month ' +str(m) +' analysis completed')
+    
+    #after collecting all monthly averages/peaks/mins, repeat and store for the year 
+    mean = np.nanmean(yearly_means, axis = 0)
+    peak = np.nanmax(yearly_peak, axis = 0)
+    mini = np.nanmin(yearly_min, axis = 0)
+        
+    mean_annual[available_years.index(year), :, :] = mean
+    peak_annual[available_years.index(year), :, :] = peak
+    min_annual[available_years.index(year), :, :] = mini
+    min_annual[available_years.index(year), :, :] = mini 
+
+#%%
+# save all data in pickle 
+dictionary = {'mean_annual' : mean_annual,
+              'peak_annual' : peak_annual,
+              'min_annual' : min_annual,
+              'year' : available_years,
               'lat' : lat,
               'lon' : lon}
 
