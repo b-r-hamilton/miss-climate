@@ -300,7 +300,7 @@ def plot_pcasim_reg(tups, x_bin, y_bin, Y, lat, lon, path, title):
     plt.close(fig)
     
 def single_mesh_copernicus(frame, lat, lon, path, title):
-    fig = plt.figure(figsize = (30, 16))
+    fig = plt.figure(figsize = (15, 8))
     ax3 = plt.subplot(projection = ccrs.PlateCarree(central_longitude = 0))
     ax3.coastlines()
     plt.title(title)
