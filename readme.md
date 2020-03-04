@@ -1,4 +1,4 @@
-
+# ___ESSENTIALLY DEPRECATED, MISS-ATMO IS BETTER___
 # Overview
 code used to analyze/visualize river and environmental datasets including
 
@@ -21,7 +21,7 @@ sorted by project (and in order of age of development)
 	- full_river_analysis
 	- full_river_analysis2
 	- print top dates: used to try to start to debug weird problem 
-		miss_pca: principal component analysis 
+	- miss_pca: principal component analysis 
 
 ## known bugs
 
